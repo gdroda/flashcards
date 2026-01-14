@@ -9,6 +9,7 @@ namespace Flashcards
         static void Main(string[] args)
         {
             CreateDatabase();
+            User_Input.MainMenu();
         }
 
         static void CreateDatabase()
