@@ -1,5 +1,4 @@
-﻿using System;
-using flashcards;
+﻿using flashcards;
 using Microsoft.Data.SqlClient;
 
 namespace Flashcards

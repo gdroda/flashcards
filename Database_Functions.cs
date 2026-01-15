@@ -1,6 +1,4 @@
-﻿using System;
-using Azure.Core;
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 
 
 namespace flashcards
