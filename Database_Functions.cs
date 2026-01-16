@@ -71,7 +71,7 @@ namespace flashcards
             }
         }
 
-        static void EstablishAndReceiveFlashcards(string str)
+        static List<Flashcard>? EstablishAndReceiveFlashcards(string str, Stacks stackInp)
         {
             SqlConnection connection = new("Server=(localdb)\\MSSQLLocalDB;Integrated security=SSPI;database=flashcardDB;Trusted_Connection=true;");
             SqlCommand command = new(str, connection);
@@ -80,21 +80,22 @@ namespace flashcards
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
 
-                List<Stacks> stacksList = new();
+                List<Flashcard> flashcardList = new();
                 Console.WriteLine("Front\tBack");
                 Console.WriteLine("---------------------");
                 while (reader.Read())
                 {
                     string? front = reader.IsDBNull(1) ? null : reader.GetString(1);
                     string? back = reader.IsDBNull(2) ? null : reader.GetString(2);
+                    flashcardList.Add(new Flashcard(reader.GetInt32(0), front, back, stackInp.Id));
                     Console.WriteLine($"{front}\t{back}");
                 }
-                //return stacksList;
+                return flashcardList;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error connecting to database...{ex}");
-                return;
+                return null;
             }
             finally
             {
@@ -146,7 +147,7 @@ namespace flashcards
         {
             switch (table)
             {
-                case "Stacks":
+                case "Stacks":  //ADD FUNCTIONALITY -> IF FLASHCARDS WITH STACK ID EXIST, FOREACH FLASHCARDS WITH THAT ID, DELETE THOSE FIRST THEN DELETE STACK
                     Console.Write("\nName: ");
                     string? stackName = Console.ReadLine();
                     string str = $@"DELETE FROM {table} Where (Name = '{stackName}')";
@@ -175,7 +176,7 @@ namespace flashcards
         public static void ShowFlashcard(Stacks stack)
         {
             string str = $@"SELECT * FROM Flashcards WHERE StackId = {stack.Id}";
-            EstablishAndReceiveFlashcards(str);
+            List<Flashcard>? flashcardList = EstablishAndReceiveFlashcards(str, stack);
         }
     }
 
