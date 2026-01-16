@@ -37,7 +37,7 @@ namespace flashcards
             }
         }
 
-        static List<Stacks>? EstablishAndReceive(string str)
+        static List<Stacks>? EstablishAndReceiveStacks(string str)
         {
             SqlConnection connection = new("Server=(localdb)\\MSSQLLocalDB;Integrated security=SSPI;database=flashcardDB;Trusted_Connection=true;");
             SqlCommand command = new(str, connection);
@@ -61,6 +61,40 @@ namespace flashcards
             {
                 Console.WriteLine($"Error connecting to database...{ex}");
                 return null;
+            }
+            finally
+            {
+                if (connection.State == System.Data.ConnectionState.Open)
+                {
+                    connection.Close();
+                }
+            }
+        }
+
+        static void EstablishAndReceiveFlashcards(string str)
+        {
+            SqlConnection connection = new("Server=(localdb)\\MSSQLLocalDB;Integrated security=SSPI;database=flashcardDB;Trusted_Connection=true;");
+            SqlCommand command = new(str, connection);
+            try
+            {
+                connection.Open();
+                SqlDataReader reader = command.ExecuteReader();
+
+                List<Stacks> stacksList = new();
+                Console.WriteLine("Front\tBack");
+                Console.WriteLine("---------------------");
+                while (reader.Read())
+                {
+                    string? front = reader.IsDBNull(1) ? null : reader.GetString(1);
+                    string? back = reader.IsDBNull(2) ? null : reader.GetString(2);
+                    Console.WriteLine($"{front}\t{back}");
+                }
+                //return stacksList;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error connecting to database...{ex}");
+                return;
             }
             finally
             {
@@ -99,7 +133,7 @@ namespace flashcards
                         string? flashcardBack = Console.ReadLine();
                         string strF = $@"INSERT INTO {table} (Front, Back, StackId) VALUES ('{flashcardFront}','{flashcardBack}',{stackInp.Id})";
                         EstablishConnection(strF, true);
-                        User_Input.StacksMenu();
+                        User_Input.FlashcardMenu(stackInp);
                     }
                     break;
                 default:
@@ -108,7 +142,7 @@ namespace flashcards
         }
 
 
-        public static void RemoveFromTable(string table)
+        public static void RemoveFromTable(string table, Stacks? stackInp)
         {
             switch (table)
             {
@@ -120,6 +154,11 @@ namespace flashcards
                     User_Input.StacksMenu();
                     break;
                 case "Flashcards":
+                    Console.Write("\nName: ");
+                    string? fcFront = Console.ReadLine();
+                    string strf = $@"DELETE FROM {table} Where (Front = '{fcFront}')";
+                    EstablishConnection(strf, true);
+                    User_Input.FlashcardMenu(stackInp);
                     break;
                 default:
                     break;
@@ -129,14 +168,14 @@ namespace flashcards
         public static List<Stacks>? ShowStacks()
         {
             string str = @"SELECT * FROM Stacks";
-            List<Stacks>? stacksList = EstablishAndReceive(str);
+            List<Stacks>? stacksList = EstablishAndReceiveStacks(str);
             return stacksList;
         }
 
         public static void ShowFlashcard(Stacks stack)
         {
             string str = $@"SELECT * FROM Flashcards WHERE StackId = {stack.Id}";
-            EstablishConnection(str, true);
+            EstablishAndReceiveFlashcards(str);
         }
     }
 
