@@ -1,4 +1,7 @@
 ﻿using Microsoft.Data.SqlClient;
+using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.Metrics;
+using System.Reflection.Metadata.Ecma335;
 
 
 namespace flashcards
@@ -16,7 +19,7 @@ namespace flashcards
                 if (msg)
                 {
                     Console.WriteLine("Success!");
-                    Console.WriteLine("Press ENTER to return");
+                    Console.WriteLine("\nPress ENTER to return");
                     Console.ReadLine();
                 }
                 
@@ -34,7 +37,7 @@ namespace flashcards
             }
         }
 
-        static List<string> EstablishAndReceive(string str)
+        static List<Stacks>? EstablishAndReceive(string str)
         {
             SqlConnection connection = new("Server=(localdb)\\MSSQLLocalDB;Integrated security=SSPI;database=flashcardDB;Trusted_Connection=true;");
             SqlCommand command = new(str, connection);
@@ -43,15 +46,16 @@ namespace flashcards
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
 
-                List<string> stackList = new();
+                List<Stacks> stacksList = new();
                 Console.WriteLine("Name");
                 Console.WriteLine("------");
                 while (reader.Read())
                 {
-                    Console.WriteLine($"{reader[1]}");
-                    stackList.Add(reader[1].ToString() ?? "empty");
+                    string? name = reader.IsDBNull(1) ? null : reader.GetString(1);
+                    Console.WriteLine($"{name}");
+                    stacksList.Add(new Stacks(reader.GetInt32(0), name));
                 }
-                return stackList;
+                return stacksList;
             }
             catch (Exception ex)
             {
@@ -75,7 +79,7 @@ namespace flashcards
             EstablishConnection(strb, false);
         }
 
-        public static void AddToTable(string table)
+        public static void AddToTable(string table, Stacks? stackInp)
         {
             switch (table)
             {
@@ -87,16 +91,22 @@ namespace flashcards
                     User_Input.StacksMenu();
                         break;
                 case "Flashcards":
-                    Console.Write("\nName: ");
-                    string? flashcardName = Console.ReadLine();
-                    string strF= $@"INSERT INTO {table} (Name) VALUES ('{flashcardName}')"; //NEED DIFFERENT INPUT VALUES
-                    EstablishConnection(strF, true);
-                    User_Input.StacksMenu();
+                    if (stackInp != null)
+                    {
+                        Console.Write("\nFront value: ");
+                        string? flashcardFront = Console.ReadLine();
+                        Console.Write("\nBack value: ");
+                        string? flashcardBack = Console.ReadLine();
+                        string strF = $@"INSERT INTO {table} (Front, Back, StackId) VALUES ('{flashcardFront}','{flashcardBack}',{stackInp.Id})";
+                        EstablishConnection(strF, true);
+                        User_Input.StacksMenu();
+                    }
                     break;
                 default:
                     break;
             }
         }
+
 
         public static void RemoveFromTable(string table)
         {
@@ -116,11 +126,53 @@ namespace flashcards
             }
         }
 
-        public static List<string> ShowStacks()
+        public static List<Stacks>? ShowStacks()
         {
             string str = @"SELECT * FROM Stacks";
-            List<string> stacksList = EstablishAndReceive(str);
+            List<Stacks>? stacksList = EstablishAndReceive(str);
             return stacksList;
         }
+
+        public static void ShowFlashcard(Stacks stack)
+        {
+            string str = $@"SELECT * FROM Flashcards WHERE StackId = {stack.Id}";
+            EstablishConnection(str, true);
+        }
+    }
+
+    class Stacks
+    {
+        private int _iD;
+        private string? _name;
+
+        public Stacks(int id, string? name)
+        {
+            _iD = id;
+            _name = name;
+        }
+
+        public int Id { get => _iD; }
+        public string? Name { get => _name; }
+    }
+
+    class Flashcard
+    {
+        private int _iD;
+        private string? _front;
+        private string? _back;
+        private int _stackId;
+
+        public Flashcard(int id, string? front, string? back, int sid)
+        {
+            _iD = id;
+            _front = front;
+            _back = back;
+            _stackId = sid;
+        }
+
+        public int Id { get => _iD; }
+        public string? Front { get => _front; }
+        public string? Back { get => _back; }
+        public int StackId { get => _stackId; }
     }
 }

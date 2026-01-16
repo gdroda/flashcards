@@ -44,22 +44,22 @@ namespace flashcards
                     string? stack = Console.ReadLine();
                     if (stack != null)
                     {
-                        foreach(string s in stackList)
+                        foreach (Stacks s in stackList ?? [])
                         {
-                            if (s == stack)
+                            if (s.Name == stack)
                             {
-                                FlashcardMenu(stack);
+                                FlashcardMenu(s);
                                 return;
                             }
                         }
-                        Console.WriteLine("\nStack not found");
-                        Console.WriteLine("Press ENTER to return");
+                        Console.WriteLine("Stack not found");
+                        Console.WriteLine("\nPress ENTER to return");
                         Console.ReadLine();
                         StacksMenu();
                     }
                     break;
                 case "2":
-                    Database_Functions.AddToTable("Stacks");
+                    Database_Functions.AddToTable("Stacks", null);
                     break;
                 case "3":
                     Database_Functions.RemoveFromTable("Stacks");
@@ -73,13 +73,15 @@ namespace flashcards
             }
         }
 
-        public static void FlashcardMenu(string stackToView)
+        public static void FlashcardMenu(Stacks stackToView)
         {
-            string stack = stackToView;
-            if (stack == "") StacksMenu();
+            Stacks stack = stackToView;
+            if (stack.Name == "") StacksMenu();
+
+            Database_Functions.ShowFlashcard(stack);
 
             Console.Clear();
-            Console.WriteLine("\n1. Show stacks");
+            Console.WriteLine("\n1. Start studying session");
             Console.WriteLine("2. Create new flashcard");
             Console.WriteLine("3. Delete flashcard");
             Console.WriteLine("4. Return\n");
@@ -92,13 +94,13 @@ namespace flashcards
                     FlashcardMenu(stack); //temp
                     break;
                 case "2":
-                    Database_Functions.AddToTable("Flashcards");
+                    Database_Functions.AddToTable("Flashcards", stack);
                     break;
                 case "3":
                     Database_Functions.RemoveFromTable("Flashcards");
                     break;
                 case "4":
-                    MainMenu();
+                    StacksMenu();
                     break;
                 default:
                     FlashcardMenu(stack);
