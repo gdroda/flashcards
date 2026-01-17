@@ -40,9 +40,9 @@
             {
                 case "1":
                     Console.Write("\nEnter name of stack: ");
-                    string? stack = Console.ReadLine();
-                    var nameCheck = StackAndFlashcardList.AllStacks ?? Enumerable.Empty<Stacks>().Where(a => a.Name == stack).ToList();
-                    if (stack != null && nameCheck[0] != null)
+                    string? stackName = Console.ReadLine();
+                    var nameCheck = (StackAndFlashcardList.AllStacks ?? Enumerable.Empty<Stacks>()).Where(a => a.Name == stackName).ToList();
+                    if (nameCheck.Count > 0)
                     {
                         FlashcardMenu(nameCheck[0]);
                         Console.WriteLine("Stack not found");
@@ -50,7 +50,13 @@
                         Console.ReadLine();
                         StacksMenu();
                     }
-                    break;
+                    else
+                    {
+                        Console.WriteLine("Stack name not found. Press ENTER to return");
+                        Console.ReadLine();
+                        StacksMenu();
+                    }
+                        break;
                 case "2":
                     Database_Functions.AddToTable("Stacks", null);
                     break;
@@ -82,7 +88,7 @@
                 switch (comm)
                 {
                     case "1":
-                        FlashcardMenu(stackToView); //temp
+                        FlashcardMenu(stackToView); //temp NEXT TO WORK ON, IMPLEMENT STUDY SESSION
                         break;
                     case "2":
                         Database_Functions.AddToTable("Flashcards", stackToView);

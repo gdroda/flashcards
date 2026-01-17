@@ -77,15 +77,17 @@ namespace flashcards
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
 
+                int fakeId = 1;  //hehehe >:]
                 List<Flashcard> flashcardList = new();
-                Console.WriteLine("Front\tBack");
+                Console.WriteLine("ID\tFront\tBack");
                 Console.WriteLine("---------------------");
                 while (reader.Read())
                 {
                     string? front = reader.IsDBNull(1) ? null : reader.GetString(1);
                     string? back = reader.IsDBNull(2) ? null : reader.GetString(2);
                     flashcardList.Add(new Flashcard(reader.GetInt32(0), front, back, stackInp.Id));
-                    Console.WriteLine($"{front}\t{back}");
+                    Console.WriteLine($"{fakeId}\t{front}\t{back}");
+                    fakeId++;
                 }
                 return flashcardList;
             }
@@ -148,24 +150,35 @@ namespace flashcards
                     Console.Write("\nName: ");
                     string? stackName = Console.ReadLine();
                     var nameCheck = (StackAndFlashcardList.AllStacks ?? Enumerable.Empty<Stacks>()).Where(s => s.Name == stackName).ToList();
-                Repeat:
-                    Console.WriteLine("This will also delete the flashcards contained. Are you sure? (y/n)");
-                    string? opt = Console.ReadLine();
-                    switch (opt)
+
+                    if (nameCheck.Count > 0)
                     {
-                        case "y":
-                            string stra = $@"DELETE FROM Flashcards Where (StackId = '{nameCheck[0].Id}')";
-                            ConnectAndCommand(stra, false);
-                            string strb = $@"DELETE FROM {table} Where (Name = '{stackName}')";
-                            ConnectAndCommand(strb, true);
-                            User_Input.StacksMenu();
-                            break;
-                        case "n":
-                            User_Input.StacksMenu();
-                            break;
-                        default:
-                            Console.WriteLine("Wrong Input only y or n");
-                            goto Repeat;
+                        Console.WriteLine($"{stackName}   {nameCheck[0].Name}");
+                    Repeat:
+                        Console.WriteLine("This will also delete the flashcards contained. Are you sure? (y/n)");
+                        string? opt = Console.ReadLine();
+                        switch (opt)
+                        {
+                            case "y":
+                                string stra = $@"DELETE FROM Flashcards Where (StackId = '{nameCheck[0].Id}')";
+                                ConnectAndCommand(stra, false);
+                                string strb = $@"DELETE FROM {table} Where (Name = '{stackName}')";
+                                ConnectAndCommand(strb, true);
+                                User_Input.StacksMenu();
+                                break;
+                            case "n":
+                                User_Input.StacksMenu();
+                                break;
+                            default:
+                                Console.WriteLine("Wrong Input only y or n");
+                                goto Repeat;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Name not found. Press ENTER to return");
+                        Console.ReadLine();
+                        User_Input.StacksMenu();
                     }
                     break;
 
