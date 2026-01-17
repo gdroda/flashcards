@@ -1,5 +1,4 @@
-﻿
-namespace flashcards
+﻿namespace flashcards
 {
     internal class User_Input
     {
@@ -42,16 +41,10 @@ namespace flashcards
                 case "1":
                     Console.Write("\nEnter name of stack: ");
                     string? stack = Console.ReadLine();
-                    if (stack != null)
+                    var nameCheck = StackAndFlashcardList.AllStacks ?? Enumerable.Empty<Stacks>().Where(a => a.Name == stack).ToList();
+                    if (stack != null && nameCheck[0] != null)
                     {
-                        foreach (Stacks s in stackList ?? [])
-                        {
-                            if (s.Name == stack)
-                            {
-                                FlashcardMenu(s);
-                                return;
-                            }
-                        }
+                        FlashcardMenu(nameCheck[0]);
                         Console.WriteLine("Stack not found");
                         Console.WriteLine("\nPress ENTER to return");
                         Console.ReadLine();
@@ -73,39 +66,40 @@ namespace flashcards
             }
         }
 
-        public static void FlashcardMenu(Stacks? stackToView)
+        public static void FlashcardMenu(Stacks stackToView)
         {
-            Stacks? stack = stackToView;
-            if (stack == null) StacksMenu();
-
-
-            Console.Clear();
-            Database_Functions.ShowFlashcard(stack);
-            Console.WriteLine("\n1. Start studying session");
-            Console.WriteLine("2. Create new flashcard");
-            Console.WriteLine("3. Delete flashcard");
-            Console.WriteLine("4. Return\n");
-
-            string? comm = Console.ReadLine();
-
-            switch (comm)
+            if (stackToView != null)
             {
-                case "1":
-                    FlashcardMenu(stack); //temp
-                    break;
-                case "2":
-                    Database_Functions.AddToTable("Flashcards", stack);
-                    break;
-                case "3":
-                    Database_Functions.RemoveFromTable("Flashcards", stack);
-                    break;
-                case "4":
-                    StacksMenu();
-                    break;
-                default:
-                    FlashcardMenu(stack);
-                    break;
+                Console.Clear();
+                Database_Functions.ShowFlashcard(stackToView);
+                Console.WriteLine("\n1. Start studying session");
+                Console.WriteLine("2. Create new flashcard");
+                Console.WriteLine("3. Delete flashcard");
+                Console.WriteLine("4. Return\n");
+
+                string? comm = Console.ReadLine();
+
+                switch (comm)
+                {
+                    case "1":
+                        FlashcardMenu(stackToView); //temp
+                        break;
+                    case "2":
+                        Database_Functions.AddToTable("Flashcards", stackToView);
+                        break;
+                    case "3":
+                        Database_Functions.RemoveFromTable("Flashcards", stackToView);
+                        break;
+                    case "4":
+                        StacksMenu();
+                        break;
+                    default:
+                        FlashcardMenu(stackToView);
+                        break;
+                }
             }
+            else StacksMenu();
+
         }
     }
 }

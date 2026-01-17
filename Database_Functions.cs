@@ -1,14 +1,11 @@
 ﻿using Microsoft.Data.SqlClient;
-using System.ComponentModel.DataAnnotations;
-using System.Diagnostics.Metrics;
-using System.Reflection.Metadata.Ecma335;
 
 
 namespace flashcards
 {
     internal class Database_Functions
     {
-        static void EstablishConnection(string str, bool msg)
+        static void ConnectAndCommand(string str, bool msg)
         {
             SqlConnection connection = new("Server=(localdb)\\MSSQLLocalDB;Integrated security=SSPI;database=flashcardDB;Trusted_Connection=true;");
             SqlCommand command = new(str, connection);
@@ -22,7 +19,7 @@ namespace flashcards
                     Console.WriteLine("\nPress ENTER to return");
                     Console.ReadLine();
                 }
-                
+
             }
             catch (Exception ex)
             {
@@ -37,7 +34,7 @@ namespace flashcards
             }
         }
 
-        static List<Stacks>? EstablishAndReceiveStacks(string str)
+        static List<Stacks>? ConnectAndReceiveStacks(string str)
         {
             SqlConnection connection = new("Server=(localdb)\\MSSQLLocalDB;Integrated security=SSPI;database=flashcardDB;Trusted_Connection=true;");
             SqlCommand command = new(str, connection);
@@ -71,7 +68,7 @@ namespace flashcards
             }
         }
 
-        static List<Flashcard>? EstablishAndReceiveFlashcards(string str, Stacks stackInp)
+        static List<Flashcard>? ConnectAndReceiveFlashcards(string str, Stacks stackInp)
         {
             SqlConnection connection = new("Server=(localdb)\\MSSQLLocalDB;Integrated security=SSPI;database=flashcardDB;Trusted_Connection=true;");
             SqlCommand command = new(str, connection);
@@ -109,9 +106,9 @@ namespace flashcards
         public static void CreateDefaultTables()
         {
             string stra = "IF OBJECT_ID('Stacks') is null CREATE TABLE Stacks (Id INT PRIMARY KEY IDENTITY, Name VARCHAR(64))";
-            EstablishConnection(stra, false);
+            ConnectAndCommand(stra, false);
             string strb = "IF OBJECT_ID('Flashcards') is null CREATE TABLE Flashcards (Id INT PRIMARY KEY IDENTITY, Front VARCHAR(64), Back VARCHAR(64), StackId INT, FOREIGN KEY (StackId) REFERENCES Stacks(Id))";
-            EstablishConnection(strb, false);
+            ConnectAndCommand(strb, false);
         }
 
         public static void AddToTable(string table, Stacks? stackInp)
@@ -122,9 +119,9 @@ namespace flashcards
                     Console.Write("\nName: ");
                     string? stackName = Console.ReadLine();
                     string strS = $@"INSERT INTO {table} (Name) VALUES ('{stackName}')";
-                    EstablishConnection(strS, true);
+                    ConnectAndCommand(strS, true);
                     User_Input.StacksMenu();
-                        break;
+                    break;
                 case "Flashcards":
                     if (stackInp != null)
                     {
@@ -133,7 +130,7 @@ namespace flashcards
                         Console.Write("\nBack value: ");
                         string? flashcardBack = Console.ReadLine();
                         string strF = $@"INSERT INTO {table} (Front, Back, StackId) VALUES ('{flashcardFront}','{flashcardBack}',{stackInp.Id})";
-                        EstablishConnection(strF, true);
+                        ConnectAndCommand(strF, true);
                         User_Input.FlashcardMenu(stackInp);
                     }
                     break;
@@ -147,19 +144,37 @@ namespace flashcards
         {
             switch (table)
             {
-                case "Stacks":  //ADD FUNCTIONALITY -> IF FLASHCARDS WITH STACK ID EXIST, FOREACH FLASHCARDS WITH THAT ID, DELETE THOSE FIRST THEN DELETE STACK
+                case "Stacks":
                     Console.Write("\nName: ");
                     string? stackName = Console.ReadLine();
-                    string str = $@"DELETE FROM {table} Where (Name = '{stackName}')";
-                    EstablishConnection(str, true);
-                    User_Input.StacksMenu();
+                    var nameCheck = (StackAndFlashcardList.AllStacks ?? Enumerable.Empty<Stacks>()).Where(s => s.Name == stackName).ToList();
+                Repeat:
+                    Console.WriteLine("This will also delete the flashcards contained. Are you sure? (y/n)");
+                    string? opt = Console.ReadLine();
+                    switch (opt)
+                    {
+                        case "y":
+                            string stra = $@"DELETE FROM Flashcards Where (StackId = '{nameCheck[0].Id}')";
+                            ConnectAndCommand(stra, false);
+                            string strb = $@"DELETE FROM {table} Where (Name = '{stackName}')";
+                            ConnectAndCommand(strb, true);
+                            User_Input.StacksMenu();
+                            break;
+                        case "n":
+                            User_Input.StacksMenu();
+                            break;
+                        default:
+                            Console.WriteLine("Wrong Input only y or n");
+                            goto Repeat;
+                    }
                     break;
+
                 case "Flashcards":
                     Console.Write("\nName: ");
                     string? fcFront = Console.ReadLine();
                     string strf = $@"DELETE FROM {table} Where (Front = '{fcFront}')";
-                    EstablishConnection(strf, true);
-                    User_Input.FlashcardMenu(stackInp);
+                    ConnectAndCommand(strf, true);
+                    if (stackInp != null) User_Input.FlashcardMenu(stackInp);
                     break;
                 default:
                     break;
@@ -169,21 +184,31 @@ namespace flashcards
         public static List<Stacks>? ShowStacks()
         {
             string str = @"SELECT * FROM Stacks";
-            List<Stacks>? stacksList = EstablishAndReceiveStacks(str);
+            List<Stacks>? stacksList = ConnectAndReceiveStacks(str);
+            StackAndFlashcardList.AllStacks = stacksList;
             return stacksList;
         }
 
         public static void ShowFlashcard(Stacks stack)
         {
             string str = $@"SELECT * FROM Flashcards WHERE StackId = {stack.Id}";
-            List<Flashcard>? flashcardList = EstablishAndReceiveFlashcards(str, stack);
+            StackAndFlashcardList.AllFlashcards = ConnectAndReceiveFlashcards(str, stack);
         }
+    }
+
+    class StackAndFlashcardList
+    {
+        static List<Flashcard>? allFlashcards;
+        static List<Stacks>? allStacks;
+
+        public static List<Flashcard>? AllFlashcards { get => allFlashcards; set => allFlashcards = value; }
+        public static List<Stacks>? AllStacks { get => allStacks; set => allStacks = value; }
     }
 
     class Stacks
     {
-        private int _iD;
-        private string? _name;
+        private readonly int _iD;
+        private readonly string? _name;
 
         public Stacks(int id, string? name)
         {
@@ -197,10 +222,10 @@ namespace flashcards
 
     class Flashcard
     {
-        private int _iD;
-        private string? _front;
-        private string? _back;
-        private int _stackId;
+        private readonly int _iD;
+        private readonly string? _front;
+        private readonly string? _back;
+        private readonly int _stackId;
 
         public Flashcard(int id, string? front, string? back, int sid)
         {
