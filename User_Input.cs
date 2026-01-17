@@ -42,14 +42,7 @@
                     Console.Write("\nEnter name of stack: ");
                     string? stackName = Console.ReadLine();
                     var nameCheck = (StackAndFlashcardList.AllStacks ?? Enumerable.Empty<Stacks>()).Where(a => a.Name == stackName).ToList();
-                    if (nameCheck.Count > 0)
-                    {
-                        FlashcardMenu(nameCheck[0]);
-                        Console.WriteLine("Stack not found");
-                        Console.WriteLine("\nPress ENTER to return");
-                        Console.ReadLine();
-                        StacksMenu();
-                    }
+                    if (nameCheck.Count > 0) FlashcardMenu(nameCheck[0]);
                     else
                     {
                         Console.WriteLine("Stack name not found. Press ENTER to return");
@@ -88,7 +81,7 @@
                 switch (comm)
                 {
                     case "1":
-                        FlashcardMenu(stackToView); //temp NEXT TO WORK ON, IMPLEMENT STUDY SESSION
+                        StudySession(stackToView); //temp NEXT TO WORK ON, IMPLEMENT STUDY SESSION
                         break;
                     case "2":
                         Database_Functions.AddToTable("Flashcards", stackToView);
@@ -105,6 +98,50 @@
                 }
             }
             else StacksMenu();
+
+        }
+
+        public static void StudySession(Stacks stackToStudy)
+        {
+            //CREATE A TEMP LIST OF FLASHCARDS BELONGING TO CURRENT STACK
+            var currentList = (StackAndFlashcardList.AllFlashcards ?? Enumerable.Empty<Flashcard>()).Where(i => i.StackId == stackToStudy.Id).ToList();
+            int score = 0;
+            int maxScore = currentList.Count;
+
+            //SHOW RANDOM FLASHCARD AND WAIT FOR INPUT
+            while (currentList.Count > 0)
+            {
+                var rand = new Random();
+                var index = rand.Next(0,currentList.Count-1);
+                Console.Clear();
+                Console.WriteLine($"Score: {score} / {maxScore}\n");
+                Console.WriteLine(currentList[index].Front);
+                Console.WriteLine("\nType the answer or 0 to exit.");
+                //IF INPUT CORRECT INCREASE SCORE IF NOT, SHOW CORRECT AND MOVE TO NEXT FLASHCARD WHILE REMOVING SHOWN FROM LIST
+                Console.Write("Answer: ");
+                string? answer = Console.ReadLine();
+
+                if (answer == "0") FlashcardMenu(stackToStudy);
+
+                if (answer != null)
+                if (string.Equals(answer, currentList[index].Back, StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine("Correct!");
+                    score++;
+                }
+                else Console.WriteLine($"Wrong! Correct answer was {currentList[index].Back}");
+
+                currentList.Remove(currentList[index]);
+                Console.WriteLine("\nPress ENTER to continue");
+                Console.ReadLine();
+            }
+
+            FlashcardMenu(stackToStudy);
+            //SAVE SESSION DATA
+        }
+
+        public static void DisplayFlashcard()
+        {
 
         }
     }
